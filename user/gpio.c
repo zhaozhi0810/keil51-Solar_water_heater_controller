@@ -24,7 +24,7 @@ typedef struct btn_info{
 static BTN_INFO btns;   //只有4个按键
 //static char btn_state;
 
-sbit ShangShui_En = P0^4;   //上水使能
+sbit ShangShui_En = P1^4;   //上水使能
 
 #define ShangShuiBtn 1   //上水按钮引脚编号
 #define SheZhiBtn 2		 //	设置按钮引脚编号
@@ -35,7 +35,10 @@ sbit ShangShui_En = P0^4;   //上水使能
 void gpio_init(void)
 {
 	P0M1 = 0xf, P0M0 = 0xf0;  // P0.0-P0.3端口设置为高阻输入模式，读取按键
-							  // P0.4-P0.7 为推挽输出
+							  // P0.4-P0.7 为推挽输出	
+	
+	P1M1 &= ~(1<<4), P1M0 |= (1<<4);   //P1.4 推挽输出
+	
 }
 
 

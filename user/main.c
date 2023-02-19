@@ -7,6 +7,8 @@
 #include "ntc.h"
 #include "gpio.h"
 
+#include "stdio.h"
+
 
 //unsigned char temperature;
 //extern unsigned int NTC_R;
@@ -160,25 +162,37 @@ void main()
 	//初始化
 	ds1302_io_init();
 	tm1623_io_init();
+	gpio_init();
+	
 	temp_level_io_init();
+	shangshui_enable(0);  //上水电磁阀断电
+	
 	
 	InitADC();    //P1.7作为AD输入引脚
 	timer0_init();
 	Uart1Init();
 	display_start();
+//	Ds1302SetTime(16,56,20);
+//	Set_DS1302_Time(0x17,0x33,0x20); //表示17点33分20秒
+	Send_string("date: 2023-02-18\r\n");
+	printf("%d\r\n",2023);
 	
-	Send_string("2022-03-20\n\r");
-
+//	P2 = 0xff;
+//	while(1);
+	
 	while(1)	
 	{	
-		Ds1302readTime();   //读取Ds1302时间
-				
+		if(timer0_count%1000 == 330)   //0.5秒调整一次时间显示
+		{
+			Ds1302readTime();   //读取Ds1302时间
+		}	
+		
 		uart1_data_handle();   //串口接收数据的处理
 
 		if(timer0_count%500 == 0)   //0.5秒调整一次时间显示
 		{
-			display_time(TIME[2],TIME[1]);
-			state_miao(TIME[0]&1);   //冒号两个点闪烁
+			display_time(TimeData[2],TimeData[1]);
+			state_miao(TimeData[0]&1);   //冒号两个点闪烁
 		}
 
 		disp_temp_level();	

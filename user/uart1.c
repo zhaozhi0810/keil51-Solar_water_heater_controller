@@ -7,6 +7,7 @@
 #include <STC12C5A60S2.H>
 #include "1302.h"
 #include "uart1.h"
+#include "gpio.h"
 
 #define F_f 11059200UL   //晶振频率11.0692MHZ
 #define Baud_rate 9600UL //波特率9600
@@ -23,6 +24,8 @@ static unsigned char flag = 0;    //0bit time_recv 1bit date_recv
 static unsigned char ret_flag = 0;    //用于串口收到数据后应答，1表示正常，2-255表示异常，0表示没有收到数据，不回复
 #define TIME_HEAD 0xaa   //时间头部
 #define DATE_HEAD 0xcc   //日期头部
+#define PIP_WATER_HEAD 0xbb   //上水头部
+
 
 void Send_char(char str)
 {
@@ -91,6 +94,10 @@ void Uart_Isr() interrupt 4
 					flag = 2;  //收到日期设置头部
 					//uart1_recv_n = 0;
 				}
+				else if(PIP_WATER_HEAD == recv )  //上水头部
+				{
+					flag = 3;    //只要一个字节和校验和，共两个字节就好了。
+				}
 				uart1_recv_n = 0;
 			break;
 			case 1:
@@ -104,6 +111,13 @@ void Uart_Isr() interrupt 4
 			
 				//uart1_recv_buf[uart1_recv_n++] = recv;
 				break;
+			case 3:
+				uart1_recv_buf[uart1_recv_n++] = recv;
+				if(uart1_recv_n > 1)
+				{
+					uart1_recv_n = 0;
+					ret_flag = 1;   //收到一帧数据
+				}
 			default:
 				break;
 		}
@@ -145,7 +159,13 @@ void SendString(char *s)
 }
 
 
+//重写putchar函数
 
+char putchar(char c)
+{
+	SendData(c);
+	return c;
+}
 
 
 
@@ -153,22 +173,49 @@ void uart1_data_handle(void)
 {
 	if(ret_flag == 1)
 	{
-		if (check_sum(uart1_recv_buf,3) == uart1_recv_buf[3])
+		if(flag == 1 ||flag == 2)
 		{
-			//设置时间或日期
-			if(flag == 1)
+			if (check_sum(uart1_recv_buf,3) == uart1_recv_buf[3])
 			{
-				Ds1302SetTime(uart1_recv_buf[0],uart1_recv_buf[1],uart1_recv_buf[2]);				
+				//设置时间或日期
+				if(flag == 1)
+				{
+					//要求输入值是16进制（BCD码）表示，比如0x12，表示12分等类似。
+					//第一个是小时，第三个是秒
+					Set_DS1302_Time(uart1_recv_buf[0],uart1_recv_buf[1],uart1_recv_buf[2]);
+				//	Ds1302SetTime(uart1_recv_buf[0],uart1_recv_buf[1],uart1_recv_buf[2]);				
+				}
+				else if(flag == 2)
+				{				
+	//				Ds1302SetDate(uart1_recv_buf[0],uart1_recv_buf[1],uart1_recv_buf[2]);
+					//flag = 0;
+				}	
+				
+				SendString("set time or date ok\r\n");	//串口应答		
 			}
-			else if(flag == 2)
-			{				
-				Ds1302SetDate(uart1_recv_buf[0],uart1_recv_buf[1],uart1_recv_buf[2]);
-				//flag = 0;
-			}			
-			SendString("ok");	//串口应答		
+			else 
+				SendString("ck err\r\n");  //串口应答	
 		}
-		else
-			SendString("err");  //串口应答	
+		else if(flag == 3)  //上水控制
+		{
+		     if(uart1_recv_buf[0] == uart1_recv_buf[1])
+			 {
+				if(uart1_recv_buf[0] == 0)
+				{
+					shangshui_enable(0);
+					SendString("shangshui_disable\r\n");	//串口应答
+				}
+				else
+				{
+					shangshui_enable(1);
+					SendString("shangshui_enable\r\n");	//串口应答	
+				}
+			 }
+			 else 
+				SendString("ck err\r\n");  //串口应答
+		}
+		else 
+			SendString("flag err\r\n");  //串口应答	
 
 		flag = 0;
 		ret_flag = 0; //已经处理

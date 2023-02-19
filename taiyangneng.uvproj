@@ -186,7 +186,7 @@
         </Utilities>
         <Target51>
           <Target51Misc>
-            <MemoryModel>0</MemoryModel>
+            <MemoryModel>1</MemoryModel>
             <RTOS>0</RTOS>
             <RomSize>2</RomSize>
             <DataHold>0</DataHold>
@@ -233,7 +233,7 @@
               <RCB>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x10000</Size>
+                <Size>0xffff</Size>
               </RCB>
               <RXB>
                 <Type>0</Type>
@@ -382,11 +382,6 @@
               <FilePath>.\STARTUP.A51</FilePath>
             </File>
             <File>
-              <FileName>1302.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\user\1302.c</FilePath>
-            </File>
-            <File>
               <FileName>ad.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\user\ad.c</FilePath>
@@ -420,6 +415,11 @@
               <FileName>uart1.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\user\uart1.c</FilePath>
+            </File>
+            <File>
+              <FileName>1302_2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\user\1302_2.c</FilePath>
             </File>
           </Files>
         </Group>
